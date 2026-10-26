@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { openDb, type Db } from '@/lib/db';
 import { seedDatabase } from '@/lib/seed/build';
-import { getOverview, listBookings, getBooking, listCustomers, listPackages, getScheduleItems } from '@/lib/data';
+import { getOverview, listBookings, getBooking, listCustomers, listPackages, getScheduleItems, getConflicts } from '@/lib/data';
 import { addDays } from '@/lib/dates';
 
 const TODAY = '2026-10-26';
@@ -89,6 +89,21 @@ describe('getScheduleItems', () => {
     expect(inRange.filter((i) => i.kind === 'event' && i.date === DOUBLE_BOOKING_DATE).length).toBeGreaterThanOrEqual(2);
     const after = getScheduleItems(dayAfter, dayAfter, db);
     expect(after.every((i) => i.date === dayAfter)).toBe(true);
+  });
+});
+
+describe('getConflicts', () => {
+  it('reports the planted venue conflict inside the range', () => {
+    const out = getConflicts(DOUBLE_BOOKING_DATE, DOUBLE_BOOKING_DATE, db);
+    const venue = out.filter((c) => c.kind === 'venue');
+    expect(venue.length).toBeGreaterThanOrEqual(1);
+    expect(venue[0].bookingIds).toHaveLength(2);
+    expect(venue[0].date).toBe(DOUBLE_BOOKING_DATE);
+  });
+
+  it('reports nothing outside the range or for an inverted range', () => {
+    expect(getConflicts('2031-01-01', '2031-01-07', db)).toEqual([]);
+    expect(getConflicts('2026-11-10', '2026-11-01', db)).toEqual([]);
   });
 });
 

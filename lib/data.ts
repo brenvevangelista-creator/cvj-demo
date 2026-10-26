@@ -3,7 +3,7 @@ import 'server-only';
 // and lib/conflicts.ts. The optional trailing `db` argument is for tests.
 import { getDb, type Db } from '@/lib/db';
 import { addDays, monthDays } from '@/lib/dates';
-import { findConflicts } from '@/lib/conflicts';
+import { findConflicts, type Conflict, type ConflictBooking } from '@/lib/conflicts';
 import type { PackageDef } from '@/lib/types';
 import { loadPackage } from '@/lib/derived';
 
@@ -213,6 +213,16 @@ export function listCustomers(db: Db = getDb()): { id: number; name: string }[] 
 export function listPackages(db: Db = getDb()): PackageDef[] {
   const ids = db.prepare('select id from packages order by id').all() as { id: number }[];
   return ids.map((r) => loadPackage(db, r.id)!);
+}
+
+/** Venue and parking conflicts among active bookings in a date range (inclusive). */
+export function getConflicts(from: string, to: string, db: Db = getDb()): Conflict[] {
+  if (from > to) return [];
+  const rows = db
+    .prepare("select id, date, start_time as startTime, end_time as endTime, venue_area as venueArea, pax, status from bookings where date between ? and ? and status in ('confirmed','inquiry','done')")
+    .all(from, to) as ConflictBooking[];
+  const capacity = n(db.prepare("select capacity as v from units where slug = 'parking'").get());
+  return findConflicts(rows, capacity);
 }
 
 export function getScheduleItems(from: string, to: string, db: Db = getDb()): ScheduleItem[] {
