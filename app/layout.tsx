@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css';
 import { BANNER } from '@/lib/banner';
+import { ResetButton } from '@/app/reset-button';
 
 export const metadata: Metadata = {
   title: 'CVJ Group — demo dashboard',
@@ -32,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 ))}
               </nav>
             </div>
-            <div id="reset-slot" />
+            <ResetButton />
           </div>
           <div className="bg-amber-500/15 text-amber-200 text-xs">
             <div className="mx-auto max-w-6xl px-4 py-1.5">{BANNER}</div>
