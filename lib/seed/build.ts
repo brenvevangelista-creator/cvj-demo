@@ -114,6 +114,8 @@ export function seedDatabase(db: Db, today: string): void {
         offsite,
       });
     }
+    // Planted event today so the overview has live numbers.
+    planned.push({ offset: 0, start: '11:00', hours: 4, pax: 120, area: 'Garden', status: 'confirmed' });
     // Planted double-booking in the Grand Hall, 12 days out.
     planned.push({ offset: 12, start: '10:00', hours: 4, pax: 150, area: 'Grand Hall', status: 'confirmed' });
     planned.push({ offset: 12, start: '13:00', hours: 5, pax: 200, area: 'Grand Hall', status: 'confirmed' });
