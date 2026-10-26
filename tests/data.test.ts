@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { openDb, type Db } from '@/lib/db';
 import { seedDatabase } from '@/lib/seed/build';
-import { getOverview, listBookings, getBooking, listCustomers, listPackages, getScheduleItems, getConflicts } from '@/lib/data';
+import { getOverview, listBookings, getBooking, listCustomers, listPackages, getScheduleItems, getConflicts, getAnalytics } from '@/lib/data';
 import { addDays } from '@/lib/dates';
 
 const TODAY = '2026-10-26';
@@ -104,6 +104,56 @@ describe('getConflicts', () => {
   it('reports nothing outside the range or for an inverted range', () => {
     expect(getConflicts('2031-01-01', '2031-01-07', db)).toEqual([]);
     expect(getConflicts('2026-11-10', '2026-11-01', db)).toEqual([]);
+  });
+});
+
+describe('getAnalytics', () => {
+  const from = addDays(TODAY, -29);
+
+  it('returns a 30-day daily revenue frame with all six units and non-zero totals', () => {
+    const a = getAnalytics(from, TODAY, db);
+    expect(a.daily.dates).toHaveLength(30);
+    expect(Object.keys(a.daily.series).sort()).toEqual(['cafe', 'catering', 'commissary', 'events', 'parking', 'pickleball']);
+    expect(a.daily.max).toBeGreaterThan(0);
+    expect(a.daily.series.cafe.some((v) => v > 0)).toBe(true);
+    expect(a.daily.series.pickleball.some((v) => v > 0)).toBe(true);
+  });
+
+  it('mix shares sum to one and match the daily totals', () => {
+    const a = getAnalytics(from, TODAY, db);
+    const sumDaily = a.daily.totals.reduce((s, v) => s + v, 0);
+    const sumMix = a.mix.reduce((s, m) => s + m.amount, 0);
+    expect(sumMix).toBe(sumDaily);
+    expect(a.mix.reduce((s, m) => s + m.share, 0)).toBeCloseTo(1);
+  });
+
+  it('reports occupancy, court utilisation, funnel, packages, labor, repeat and payments', () => {
+    const a = getAnalytics(from, TODAY, db);
+    expect(a.occupancy.available).toBe(30);
+    expect(a.occupancy.booked).toBeGreaterThan(0);
+    expect(a.occupancy.booked).toBeLessThanOrEqual(30);
+    expect(a.courts.grid).toHaveLength(4);
+    expect(a.courts.hours).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]);
+    expect(a.courts.grid.flat().some((v) => v > 0)).toBe(true);
+    expect(a.courts.grid.flat().every((v) => v >= 0 && v <= 1)).toBe(true);
+    expect(a.funnel.map((f) => f.stage)).toEqual(['inquiry', 'site_visit', 'proposal_sent', 'booked']);
+    expect(a.funnel[0].count).toBeGreaterThan(0);
+    expect(a.topPackages.length).toBeGreaterThan(0);
+    expect(a.topPackages.length).toBeLessThanOrEqual(6);
+    expect(a.topPackages[0].revenue).toBeGreaterThanOrEqual(a.topPackages[a.topPackages.length - 1].revenue);
+    expect(a.labor.find((l) => l.slug === 'events')!.revenue).toBeGreaterThan(0);
+    expect(a.repeat.totalCustomers).toBeGreaterThan(0);
+    expect(a.repeatTrend.months).toHaveLength(6);
+    expect(a.repeatTrend.values).toHaveLength(6);
+    expect(a.payments.due).toBeGreaterThanOrEqual(0);
+    expect(a.payments.collected).toBeGreaterThanOrEqual(0);
+  });
+
+  it('returns an empty frame for an inverted range without throwing', () => {
+    const a = getAnalytics('2026-11-10', '2026-11-01', db);
+    expect(a.daily.dates).toEqual([]);
+    expect(a.occupancy).toEqual({ booked: 0, available: 0, rate: 0 });
+    expect(a.courts.grid.flat().every((v) => v === 0)).toBe(true);
   });
 });
 

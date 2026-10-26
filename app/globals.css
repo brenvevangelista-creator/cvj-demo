@@ -3,6 +3,38 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Chart palette: six categorical slots in fixed order, one per business unit.
+       Validated with the dataviz palette validator against the dark surface #18181b
+       (lightness band, chroma, CVD separation, normal-vision floor, contrast: all pass). */
+    --series-1: #3987e5; /* Events Place */
+    --series-2: #d95926; /* Catering */
+    --series-3: #199e70; /* Cafe */
+    --series-4: #c98500; /* Commissary */
+    --series-5: #d55181; /* Parking */
+    --series-6: #008300; /* Pickleball */
+    --series-muted: #52514e; /* de-emphasis / "Other" */
+    /* Sequential ramp (blue), light -> dark, for heatmaps. */
+    --seq-100: #cde2fb;
+    --seq-200: #9ec5f4;
+    --seq-300: #6da7ec;
+    --seq-400: #3987e5;
+    --seq-500: #256abf;
+    --seq-600: #184f95;
+    --seq-700: #0d366b;
+    /* Status (reserved, never a series). */
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #d03b3b;
+    /* Chart chrome on the dark surface. */
+    --surface-1: #18181b;
+    --ink-primary: #f0efec;
+    --ink-secondary: #c3c2b7;
+    --ink-muted: #898781;
+    --grid-hairline: #2c2c2a;
+    --axis-line: #383835;
+  }
   body {
     @apply bg-zinc-950 text-zinc-100 antialiased;
   }

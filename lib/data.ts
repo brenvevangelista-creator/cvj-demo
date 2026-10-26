@@ -6,6 +6,10 @@ import { addDays, monthDays } from '@/lib/dates';
 import { findConflicts, type Conflict, type ConflictBooking } from '@/lib/conflicts';
 import type { PackageDef } from '@/lib/types';
 import { loadPackage } from '@/lib/derived';
+import {
+  dailySeries, laborShare, occupancy, pipelineFunnel, repeatByMonth, repeatRate, revenueMix, utilisationGrid,
+  type DailySeries, type FunnelRow, type MixRow,
+} from '@/lib/analytics';
 
 export interface Approval {
   id: number;
@@ -254,4 +258,78 @@ export function getScheduleItems(from: string, to: string, db: Db = getDb()): Sc
   const shifts = db.prepare('select s.date, s.start_time, s.end_time, s.role, count(*) as heads, sum(case when s.staff_id is null then 1 else 0 end) as open from shifts s where s.date between ? and ? group by s.date, s.start_time, s.end_time, s.role').all(from, to) as any[];
   for (const s of shifts) items.push({ kind: 'shift', date: s.date, startTime: s.start_time, endTime: s.end_time, title: `${s.heads} ${s.role}${s.open ? ` (${s.open} open)` : ''}`, unitSlug: 'catering' });
   return items.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+}
+
+export interface Analytics {
+  from: string;
+  to: string;
+  daily: DailySeries;
+  mix: MixRow[];
+  occupancy: { booked: number; available: number; rate: number };
+  courts: { courts: number; hours: number[]; grid: number[][]; days: number };
+  funnel: FunnelRow[];
+  topPackages: { name: string; revenue: number; bookings: number }[];
+  labor: { slug: string; labor: number; revenue: number; share: number | null }[];
+  repeat: { repeatCustomers: number; totalCustomers: number; repeatShare: number };
+  repeatTrend: { months: string[]; values: number[] };
+  payments: { collected: number; due: number; dueFrom: string; dueTo: string };
+}
+
+const COURT_HOURS = Array.from({ length: 16 }, (_, i) => 6 + i); // 06:00 to 21:00
+
+/** Everything the analytics page and the overview charts need for one date range (inclusive). */
+export function getAnalytics(from: string, to: string, db: Db = getDb()): Analytics {
+  const empty = from > to;
+  const rows: { date: string; unitSlug: string; amount: number }[] = empty
+    ? []
+    : [
+        ...(db.prepare("select p.paid_on as date, u.slug as unitSlug, p.amount from payments p join bookings b on b.id = p.booking_id join units u on u.id = b.unit_id where p.paid_on between ? and ?").all(from, to) as any[]),
+        ...(db.prepare("select date, 'cafe' as unitSlug, sales as amount from cafe_daily where date between ? and ?").all(from, to) as any[]),
+        ...(db.prepare("select date, 'parking' as unitSlug, revenue as amount from parking_logs where date between ? and ?").all(from, to) as any[]),
+        ...(db.prepare("select date, 'pickleball' as unitSlug, sum(fee) as amount from court_bookings where date between ? and ? group by date").all(from, to) as any[]),
+      ];
+  const daily = dailySeries(rows, from, to);
+  const totals: Record<string, number> = {};
+  for (const [slug, arr] of Object.entries(daily.series)) totals[slug] = arr.reduce((s, v) => s + v, 0);
+  const mix = revenueMix(totals);
+
+  const eventDates = empty
+    ? []
+    : (db.prepare("select date from bookings where status in ('confirmed','done') and venue_area != 'Off-site' and date between ? and ?").all(from, to) as any[]).map((r) => r.date as string);
+  const occ = occupancy(eventDates, from, to);
+
+  const courtsCount = n(db.prepare("select capacity as v from units where slug = 'pickleball'").get()) || 4;
+  const courtRows = empty ? [] : (db.prepare('select court, hour from court_bookings where date between ? and ?').all(from, to) as { court: number; hour: number }[]);
+  const courts = { courts: courtsCount, hours: COURT_HOURS, grid: utilisationGrid(courtRows, courtsCount, COURT_HOURS, daily.dates.length), days: daily.dates.length };
+
+  const funnel = pipelineFunnel(db.prepare('select stage from inquiries').all() as { stage: string }[]);
+
+  const topPackages = empty
+    ? []
+    : (db
+        .prepare("select p.name, sum(b.pax * p.price_per_pax) as revenue, count(*) as bookings from bookings b join packages p on p.id = b.package_id where b.status in ('confirmed','done') and b.date between ? and ? group by p.id order by revenue desc limit 6")
+        .all(from, to) as { name: string; revenue: number; bookings: number }[]);
+
+  const laborRows = empty
+    ? []
+    : (db
+        .prepare("select u.slug, sum((strftime('%s', '2000-01-01 ' || s.end_time || ':00') - strftime('%s', '2000-01-01 ' || s.start_time || ':00')) / 3600.0 * st.hourly_rate) as cost from shifts s join staff st on st.id = s.staff_id join units u on u.id = s.unit_id where s.date between ? and ? group by u.slug")
+        .all(from, to) as { slug: string; cost: number }[]);
+  const labor = laborShare(Object.fromEntries(laborRows.map((r) => [r.slug, Math.round(r.cost)])), totals);
+
+  const allBookings = db.prepare("select customer_id as customerId, date from bookings where status != 'cancelled' and date <= ?").all(to) as { customerId: number; date: string }[];
+  const repeat = repeatRate(allBookings);
+  const months: string[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const [y, m] = to.slice(0, 7).split('-').map(Number);
+    months.push(new Date(Date.UTC(y, m - 1 - i, 1)).toISOString().slice(0, 7));
+  }
+  const repeatTrend = { months, values: repeatByMonth(allBookings, months) };
+
+  const dueFrom = addDays(to, 1);
+  const dueTo = addDays(to, 30);
+  const collected = empty ? 0 : n(db.prepare('select coalesce(sum(amount),0) as v from payments where paid_on between ? and ?').get(from, to));
+  const due = n(db.prepare("select coalesce(sum(i.amount),0) as v from invoices i join bookings b on b.id = i.booking_id where b.status = 'confirmed' and i.due_date between ? and ?").get(dueFrom, dueTo));
+
+  return { from, to, daily, mix, occupancy: occ, courts, funnel, topPackages, labor, repeat, repeatTrend, payments: { collected, due, dueFrom, dueTo } };
 }
