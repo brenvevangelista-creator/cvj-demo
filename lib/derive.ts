@@ -74,8 +74,9 @@ export function deriveManpower(pax: number, ratios: ManpowerRatio[]): ManpowerNe
 }
 
 /**
- * Deposit due today, half the total due 30 days before the event (never before
- * today), the rest due the day before the event. Never produces a negative line.
+ * Deposit due today, half the total due 30 days before the event, the rest due
+ * the day before the event; no due date is ever earlier than today. Never
+ * produces a negative line.
  */
 export function derivePaymentSchedule(
   b: BookingCore,
@@ -86,10 +87,10 @@ export function derivePaymentSchedule(
   const deposit = Math.min(Math.max(b.depositCentavos, 0), total);
   const installment = Math.min(Math.round(total / 2), total - deposit);
   const balance = total - deposit - installment;
-  const thirtyBefore = addDays(b.date, -30);
+  const notBeforeToday = (d: string) => (d < today ? today : d);
   return [
     { label: 'Deposit', amount: deposit, dueDate: today },
-    { label: 'Second installment', amount: installment, dueDate: thirtyBefore < today ? today : thirtyBefore },
-    { label: 'Balance', amount: balance, dueDate: addDays(b.date, -1) },
+    { label: 'Second installment', amount: installment, dueDate: notBeforeToday(addDays(b.date, -30)) },
+    { label: 'Balance', amount: balance, dueDate: notBeforeToday(addDays(b.date, -1)) },
   ];
 }

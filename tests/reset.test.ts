@@ -82,6 +82,17 @@ describe('resetDemo', () => {
     expect(bookings(dbPath)).toBeGreaterThan(0);
   });
 
+  it('keeps the live database when the backup itself cannot be written', () => {
+    resetDemo(dbPath, TODAY);
+    const before = bookings(dbPath);
+    fs.mkdirSync(`${dbPath}.bak`); // a directory where the backup file must go: copy fails
+    const r = resetDemo(dbPath, TODAY);
+    expect(r.ok).toBe(false);
+    expect(fs.existsSync(dbPath)).toBe(true);
+    expect(bookings(dbPath)).toBe(before);
+    fs.rmSync(`${dbPath}.bak`, { recursive: true, force: true });
+  });
+
   it('reports failure without a backup when seeding a brand-new file fails', () => {
     const boom = () => {
       throw new Error('first seed failed');

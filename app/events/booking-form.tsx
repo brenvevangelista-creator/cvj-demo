@@ -25,6 +25,8 @@ interface Props {
   venueAreas: readonly string[];
   initial: BookingFormValues;
   submitLabel: string;
+  /** On edit the deposit is already a recorded payment, so the field is shown but locked. */
+  depositLocked?: boolean;
 }
 
 const NEW = '';
@@ -50,7 +52,7 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function BookingForm({ action, customers, packages, venueAreas, initial, submitLabel }: Props) {
+export function BookingForm({ action, customers, packages, venueAreas, initial, submitLabel, depositLocked = false }: Props) {
   const [state, formAction] = useFormState(action, { errors: {} });
   const [customerId, setCustomerId] = useState<string>(initial.customerId ? String(initial.customerId) : NEW);
   const e = state.errors;
@@ -107,8 +109,8 @@ export function BookingForm({ action, customers, packages, venueAreas, initial, 
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Deposit received (₱)" error={e.depositCentavos}>
-          <input type="number" name="depositPesos" defaultValue={initial.depositPesos} min={0} step="0.01" className={input} />
+        <Field label={depositLocked ? 'Deposit received (₱) · recorded, cannot change here' : 'Deposit received (₱)'} error={e.depositCentavos}>
+          <input type="number" name="depositPesos" defaultValue={initial.depositPesos} min={0} step="0.01" readOnly={depositLocked} className={`${input} ${depositLocked ? 'opacity-60' : ''}`} />
         </Field>
         <Field label="Notes" error={e.notes}>
           <textarea name="notes" defaultValue={initial.notes ?? ''} rows={2} maxLength={500} className={input} />

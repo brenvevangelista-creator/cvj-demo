@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getConflicts, getScheduleItems, type ScheduleItem } from '@/lib/data';
-import { addDays, monthDays, monthOf, todayManila } from '@/lib/dates';
+import { addDays, monthDays, monthOf, safeMonth, todayManila } from '@/lib/dates';
 import { Empty } from '@/lib/ui';
 import { MonthCalendar, type CalendarChip } from '@/app/events/calendar';
 import { KIND_LABEL, WeekView } from '@/app/schedule/week';
@@ -24,7 +24,7 @@ export default function SchedulePage({ searchParams }: { searchParams: { view?: 
   const view = searchParams.view === 'month' || searchParams.month ? 'month' : 'week';
   const unit = UNITS.find((u) => u.slug === searchParams.unit) ?? UNITS[0];
   const from = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.from ?? '') ? searchParams.from! : today;
-  const month = /^\d{4}-\d{2}$/.test(searchParams.month ?? '') ? searchParams.month! : monthOf(from);
+  const month = safeMonth(searchParams.month, monthOf(from));
   const days = monthDays(month);
   const [rangeFrom, rangeTo] = view === 'week' ? [from, addDays(from, 6)] : [days[0], days[days.length - 1]];
 

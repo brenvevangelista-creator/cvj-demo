@@ -51,6 +51,11 @@ export function monthDays(yyyyMm: string): string[] {
   return out;
 }
 
+/** A query-string month ('YYYY-MM', month 01–12) or the fallback for anything else. */
+export function safeMonth(param: string | undefined | null, fallback: string): string {
+  return param && /^\d{4}-(0[1-9]|1[0-2])$/.test(param) ? param : fallback;
+}
+
 /** '2026-11-14' -> '14 Nov 2026'. */
 export function fmtDate(date: string): string {
   return new Intl.DateTimeFormat('en-GB', {

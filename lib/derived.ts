@@ -57,6 +57,11 @@ function shiftTime(hhmm: string, deltaHours: number): string {
   return `${String(nh).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+/** Shift window for an event: staff arrive two hours before and leave one hour after. */
+export function shiftWindow(startTime: string, endTime: string): { start: string; end: string } {
+  return { start: shiftTime(startTime, -2), end: shiftTime(endTime, 1) };
+}
+
 /**
  * Write the job sheet, open shifts and invoices for a booking. Call inside a
  * transaction. The existing job sheet, UNASSIGNED shifts and invoices for the
@@ -78,10 +83,13 @@ export function writeDerived(db: Db, b: BookingCore, pkg: PackageDef, today: str
   const unitId = db.prepare('select id from units where slug = ?');
   const insShift = db.prepare('insert into shifts (date, start_time, end_time, unit_id, role, staff_id, booking_id) values (?, ?, ?, ?, ?, null, ?)');
   const assigned = db.prepare('select count(*) as n from shifts where booking_id = ? and role = ? and staff_id is not null');
+  const win = shiftWindow(b.startTime, b.endTime);
+  // Assigned shifts follow the event's date and times.
+  db.prepare('update shifts set date = ?, start_time = ?, end_time = ? where booking_id = ? and staff_id is not null').run(b.date, win.start, win.end, b.id);
   for (const n of needs) {
     const have = (assigned.get(b.id, n.role) as any).n as number;
     const uid = (unitId.get(ROLE_UNIT[n.role] ?? 'events') as any).id;
-    for (let i = have; i < n.headcount; i++) insShift.run(b.date, shiftTime(b.startTime, -2), shiftTime(b.endTime, 1), uid, n.role, b.id);
+    for (let i = have; i < n.headcount; i++) insShift.run(b.date, win.start, win.end, uid, n.role, b.id);
   }
 
   // Invoices (payments untouched).

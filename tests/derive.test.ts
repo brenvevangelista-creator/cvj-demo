@@ -103,6 +103,12 @@ describe('derivePaymentSchedule', () => {
     expect(s[2].dueDate).toBe('2026-11-09');
   });
 
+  it('balance for an event today is due today, never yesterday', () => {
+    const s = derivePaymentSchedule(booking({ date: '2026-10-26' }), pkg, '2026-10-26');
+    expect(s[1].dueDate).toBe('2026-10-26');
+    expect(s[2].dueDate).toBe('2026-10-26');
+  });
+
   it('deposit above half', () => {
     const s = derivePaymentSchedule(booking({ depositCentavos: 7_000_000 }), pkg, '2026-10-26');
     expect(s.map((x) => x.amount)).toEqual([7_000_000, 3_000_000, 0]);

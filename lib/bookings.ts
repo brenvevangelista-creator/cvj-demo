@@ -25,8 +25,12 @@ export type SaveResult = { ok: true; id: number } | { ok: false; errors: Errors 
 
 const FORM_ERROR = 'Could not save, try again.';
 
-/** Validate the input against the schema and the rules that need the database or today. */
-function validate(db: Db, raw: BookingInput, today: string): { ok: true; input: z.output<typeof BookingInputSchema>; total: number } | { ok: false; errors: Errors } {
+/**
+ * Validate the input against the schema and the rules that need the database or today.
+ * `unchangedDate` is the booking's current date on an edit: keeping that date is
+ * allowed even when it is in the past; moving to a past date is not.
+ */
+function validate(db: Db, raw: BookingInput, today: string, unchangedDate?: string): { ok: true; input: z.output<typeof BookingInputSchema>; total: number } | { ok: false; errors: Errors } {
   const parsed = BookingInputSchema.safeParse(raw);
   const errors: Errors = {};
   if (!parsed.success) {
@@ -39,7 +43,7 @@ function validate(db: Db, raw: BookingInput, today: string): { ok: true; input: 
   const input = parsed.data;
   if (!input.customerId && !input.customerName?.trim()) errors.customerName = 'Choose a customer or type a new name';
   if (input.customerId && !db.prepare('select 1 from customers where id = ?').get(input.customerId)) errors.customerId = 'Unknown customer';
-  if (input.date < today) errors.date = 'Date cannot be in the past';
+  if (input.date < today && input.date !== unchangedDate) errors.date = 'Date cannot be in the past';
   if (input.endTime <= input.startTime) errors.endTime = 'End must be after start';
   const pkg = loadPackage(db, input.packageId);
   if (!pkg) errors.packageId = 'Choose a package';
@@ -87,7 +91,9 @@ export function createBooking(db: Db, raw: BookingInput, today: string): SaveRes
 export function updateBooking(db: Db, id: number, raw: BookingInput, today: string): SaveResult {
   const existing = db.prepare('select date, status from bookings where id = ?').get(id) as { date: string; status: string } | undefined;
   if (!existing) return { ok: false, errors: { form: 'Not found' } };
-  const v = validate(db, raw, today);
+  // The deposit was recorded as a payment when the booking was made; an edit never changes it.
+  const priorDeposit = (db.prepare("select amount from invoices where booking_id = ? and label = 'Deposit'").get(id) as { amount: number } | undefined)?.amount ?? 0;
+  const v = validate(db, { ...raw, depositCentavos: priorDeposit }, today, existing.date);
   if (!v.ok) return v;
   const { input } = v;
   try {
@@ -95,11 +101,8 @@ export function updateBooking(db: Db, id: number, raw: BookingInput, today: stri
       const customerId = resolveCustomer(db, input);
       db.prepare("update bookings set customer_id = ?, date = ?, start_time = ?, end_time = ?, pax = ?, package_id = ?, venue_area = ?, notes = ?, status = case when status = 'inquiry' then 'confirmed' else status end, updated_at = datetime('now') where id = ?")
         .run(customerId, input.date, input.startTime, input.endTime, input.pax, input.packageId, input.venueArea, input.notes ?? null, id);
-      if (existing.date !== input.date) {
-        // Shifts belong to the event date; unassigned ones are rebuilt by writeDerived, assigned ones move.
-        db.prepare('update shifts set date = ? where booking_id = ?').run(input.date, id);
-      }
-      const r = rederiveInside(db, id, today, input.depositCentavos);
+      // writeDerived moves assigned shifts to the new date and times and rebuilds the open ones.
+      const r = rederiveInside(db, id, today, priorDeposit);
       if (!r.ok) throw new Error(r.errors.form);
       if (existing.date !== input.date) recomputeProduction(db, productionDatesOf(existing.date));
     });

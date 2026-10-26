@@ -116,9 +116,10 @@ export function seedDatabase(db: Db, today: string): void {
     }
     // Planted event today so the overview has live numbers.
     planned.push({ offset: 0, start: '11:00', hours: 4, pax: 120, area: 'Garden', status: 'confirmed' });
-    // Planted double-booking in the Grand Hall, 12 days out.
+    // Planted double-booking in the Grand Hall, 12 days out. 150 + 220 guests also
+    // overflow the 120-slot parking lot (50 + 74 vehicles), so both conflict kinds show.
     planned.push({ offset: 12, start: '10:00', hours: 4, pax: 150, area: 'Grand Hall', status: 'confirmed' });
-    planned.push({ offset: 12, start: '13:00', hours: 5, pax: 200, area: 'Grand Hall', status: 'confirmed' });
+    planned.push({ offset: 12, start: '13:00', hours: 5, pax: 220, area: 'Grand Hall', status: 'confirmed' });
 
     for (const p of planned) {
       const date = addDays(today, p.offset);

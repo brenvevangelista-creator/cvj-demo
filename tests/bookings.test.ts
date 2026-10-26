@@ -152,6 +152,38 @@ describe('updateBooking and rederive', () => {
     expect(count('production_runs', 'date = ?', '2031-06-09')).toBe(1);
   });
 
+  it('moves assigned shifts to the new date and times when the event changes', () => {
+    const id = (createBooking(db, input({ date: '2031-05-10', startTime: '11:00', endTime: '15:00' }), TODAY) as any).id as number;
+    const staffId = (db.prepare("select id from staff where role = 'servers' limit 1").get() as any).id;
+    const shiftId = (db.prepare("select id from shifts where booking_id = ? and role = 'servers' limit 1").get(id) as any).id;
+    db.prepare('update shifts set staff_id = ? where id = ?').run(staffId, shiftId);
+    const r = updateBooking(db, id, input({ date: '2031-05-11', startTime: '17:00', endTime: '22:00' }), TODAY);
+    expect(r.ok).toBe(true);
+    const s = db.prepare('select date, start_time, end_time, staff_id from shifts where id = ?').get(shiftId) as any;
+    expect(s).toEqual({ date: '2031-05-11', start_time: '15:00', end_time: '23:00', staff_id: staffId });
+    const stale = db.prepare("select count(*) as n from shifts where booking_id = ? and (date != '2031-05-11' or start_time != '15:00' or end_time != '23:00')").get(id) as any;
+    expect(stale.n).toBe(0);
+  });
+
+  it('keeps the recorded deposit when the edit form sends a different deposit', () => {
+    const id = (createBooking(db, input({ depositCentavos: 2_000_000 }), TODAY) as any).id as number;
+    const r = updateBooking(db, id, input({ pax: 120, depositCentavos: 9_000_000 }), TODAY);
+    expect(r.ok).toBe(true);
+    const dep = db.prepare("select amount from invoices where booking_id = ? and label = 'Deposit'").get(id) as any;
+    expect(dep.amount).toBe(2_000_000);
+    expect((db.prepare('select sum(amount) as s from payments where booking_id = ?').get(id) as any).s).toBe(2_000_000);
+  });
+
+  it('allows editing a past booking when the date is unchanged but not moving it to another past date', () => {
+    const past = db.prepare("select id, date, start_time, end_time, pax, package_id, venue_area, customer_id from bookings where status = 'done' and venue_area != 'Off-site' order by date desc limit 1").get() as any;
+    const same = updateBooking(db, past.id, { customerId: past.customer_id, date: past.date, startTime: past.start_time, endTime: past.end_time, pax: past.pax, packageId: past.package_id, venueArea: past.venue_area, depositCentavos: 0, notes: 'Fixed a typo' }, TODAY);
+    expect(same.ok).toBe(true);
+    expect((db.prepare('select notes from bookings where id = ?').get(past.id) as any).notes).toBe('Fixed a typo');
+    const moved = updateBooking(db, past.id, { customerId: past.customer_id, date: addDays(past.date, -1), startTime: past.start_time, endTime: past.end_time, pax: past.pax, packageId: past.package_id, venueArea: past.venue_area, depositCentavos: 0, notes: null }, TODAY);
+    expect(moved.ok).toBe(false);
+    expect((moved as any).errors.date).toBeTruthy();
+  });
+
   it('reports an unknown booking on update and rederive', () => {
     expect((updateBooking(db, 999_999, input(), TODAY) as any).errors.form).toBe('Not found');
     expect((rederive(db, 999_999, TODAY) as any).errors.form).toBe('Not found');

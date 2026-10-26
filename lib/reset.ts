@@ -23,19 +23,27 @@ function checkpoint(p: string): void {
   }
 }
 
+/**
+ * Order matters: the live file is only deleted once a backup exists (or there
+ * was no file to begin with). Any failure before that point leaves it untouched.
+ */
 export function resetDemo(dbPath: string, today: string, seed: Seeder = seedDatabase): ResetResult {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) return { ok: false, error: `Invalid today: ${today}` };
   if (dbPath === ':memory:') return { ok: false, error: 'Cannot reset an in-memory database' };
   const bak = `${dbPath}.bak`;
-  closeDb();
-  fs.rmSync(bak, { force: true });
   const hadFile = fs.existsSync(dbPath);
+  let backedUp = false;
+  let liveRemoved = false;
   try {
+    closeDb();
     if (hadFile) {
+      fs.rmSync(bak, { force: true });
       checkpoint(dbPath);
       fs.copyFileSync(dbPath, bak);
+      backedUp = true;
     }
     removeDbFiles(dbPath);
+    liveRemoved = true;
     const db = openDb(dbPath);
     try {
       seed(db, today);
@@ -46,8 +54,10 @@ export function resetDemo(dbPath: string, today: string, seed: Seeder = seedData
     return { ok: true };
   } catch (err) {
     console.error('resetDemo failed', err);
-    removeDbFiles(dbPath);
-    if (hadFile && fs.existsSync(bak)) fs.renameSync(bak, dbPath);
+    if (liveRemoved) {
+      removeDbFiles(dbPath);
+      if (backedUp) fs.renameSync(bak, dbPath);
+    }
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }

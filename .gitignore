@@ -5,3 +5,4 @@ data/*.db*
 test-results
 .cto-toolkit/
 .superpowers/
+tsconfig.tsbuildinfo

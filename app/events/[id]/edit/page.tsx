@@ -26,6 +26,7 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
         venueAreas={venueAreas}
         initial={{ customerId: d.customerId, date: d.date, startTime: d.startTime, endTime: d.endTime, pax: d.pax, packageId: d.package.id, venueArea: d.venueArea, depositPesos: deposit / 100, notes: d.notes }}
         submitLabel="Save changes"
+        depositLocked
       />
     </div>
   );

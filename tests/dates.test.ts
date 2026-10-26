@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addDays, overlaps, monthDays, todayManila, fmtDate } from '@/lib/dates';
+import { addDays, overlaps, monthDays, todayManila, fmtDate, safeMonth } from '@/lib/dates';
 
 describe('dates', () => {
   it('addDays crosses a month boundary forward', () => {
@@ -22,6 +22,15 @@ describe('dates', () => {
   });
   it('todayManila is an ISO date', () => {
     expect(todayManila()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it('safeMonth keeps a valid month and falls back for anything else', () => {
+    expect(safeMonth('2026-12', '2026-10')).toBe('2026-12');
+    expect(safeMonth('2026-01', '2026-10')).toBe('2026-01');
+    expect(safeMonth('2026-13', '2026-10')).toBe('2026-10');
+    expect(safeMonth('2026-00', '2026-10')).toBe('2026-10');
+    expect(safeMonth('abc', '2026-10')).toBe('2026-10');
+    expect(safeMonth(undefined, '2026-10')).toBe('2026-10');
+    expect(safeMonth('', '2026-10')).toBe('2026-10');
   });
   it('fmtDate reads as day month year', () => {
     expect(fmtDate('2026-11-14')).toBe('14 Nov 2026');

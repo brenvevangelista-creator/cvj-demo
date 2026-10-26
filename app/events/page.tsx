@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { listBookings } from '@/lib/data';
-import { fmtDate, monthOf, todayManila } from '@/lib/dates';
+import { fmtDate, monthOf, safeMonth, todayManila } from '@/lib/dates';
 import { Badge, ButtonLink, Empty, STATUS_TONE, php } from '@/lib/ui';
 import { MonthCalendar, type CalendarChip } from '@/app/events/calendar';
 
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default function EventsPage({ searchParams }: { searchParams: { month?: string } }) {
   const today = todayManila();
-  const month = /^\d{4}-\d{2}$/.test(searchParams.month ?? '') ? searchParams.month! : monthOf(today);
+  const month = safeMonth(searchParams.month, monthOf(today));
   const rows = listBookings(month);
   const chips: CalendarChip[] = rows.map((r) => ({
     id: r.id,

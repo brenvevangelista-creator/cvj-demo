@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { openDb } from '@/lib/db';
 import { seedDatabase } from '@/lib/seed/build';
-import { overlaps } from '@/lib/dates';
+import { addDays, overlaps } from '@/lib/dates';
+import { findConflicts } from '@/lib/conflicts';
 
 const TODAY = '2026-10-26';
 
@@ -49,6 +50,12 @@ describe('seed', () => {
       if (a.id < b.id && a.date === b.date && a.venue_area === b.venue_area && overlaps(a.start_time, a.end_time, b.start_time, b.end_time)) conflict = true;
     }
     expect(conflict).toBe(true);
+
+    // The planted pair must also overflow the parking lot so the schedule shows both conflict kinds.
+    const planted = db.prepare(`select id, date, start_time as startTime, end_time as endTime, venue_area as venueArea, pax, status from bookings where date = ? and status = 'confirmed'`).all(addDays(TODAY, 12)) as any[];
+    const kinds = findConflicts(planted, 120).map((c) => c.kind);
+    expect(kinds).toContain('venue');
+    expect(kinds).toContain('parking');
 
     const low = db.prepare(`select i.name from ingredients i join (select ingredient_id, sum(qty) as on_hand from stock_movements group by ingredient_id) s on s.ingredient_id = i.id where s.on_hand < i.par_level`).all();
     expect(low.length).toBeGreaterThanOrEqual(1);
