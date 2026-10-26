@@ -18,7 +18,12 @@ npm run dev        # http://localhost:3000
 
 ```bash
 npm run typecheck
-npm test           # vitest: derivation rules, seed integrity, data layer
+npm test           # vitest: derivation rules, seed integrity, data layer, bookings, reset
+npm run test:smoke # Playwright: seeds a scratch database, books an event through the form, checks every page, resets
 ```
 
-The `DEMO_DB` environment variable overrides the database path (tests use `:memory:`).
+The `DEMO_DB` environment variable overrides the database path (tests use `:memory:`, the smoke test uses `data/smoke.db`).
+
+## Demo day
+
+The click path, what to say at each step and what to ask the owners: `docs/demo-run-sheet.md`.
