@@ -9,6 +9,7 @@ import {
   repeatRate,
   repeatByMonth,
   niceMax,
+  axisTicks,
   compactPesos,
   UNIT_SLUGS,
 } from '@/lib/analytics';
@@ -172,6 +173,14 @@ describe('scales and formatting', () => {
     expect(niceMax(93)).toBe(100);
     expect(niceMax(1_234_567)).toBe(1_500_000);
     expect(niceMax(4_400_000)).toBe(5_000_000);
+  });
+
+  it('axisTicks picks a tick count that gives clean steps for the ceiling', () => {
+    expect(axisTicks(140_000)).toEqual({ max: 150_000, values: [0, 50_000, 100_000, 150_000] });
+    expect(axisTicks(93)).toEqual({ max: 100, values: [0, 25, 50, 75, 100] });
+    expect(axisTicks(2_300)).toEqual({ max: 2_500, values: [0, 500, 1_000, 1_500, 2_000, 2_500] });
+    expect(axisTicks(0)).toEqual({ max: 1, values: [0, 0.25, 0.5, 0.75, 1] });
+    expect(axisTicks(0.8)).toEqual({ max: 0.8, values: [0, 0.2, 0.4, 0.6, 0.8] });
   });
 
   it('compactPesos shortens large peso amounts given in centavos', () => {

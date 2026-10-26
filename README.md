@@ -1,6 +1,6 @@
 # CVJ Group demo dashboard
 
-A sales demo built by Growth Architect Studio for the owners of CVJ Events Place: one owner dashboard across six business units (Events Place, Catering, Cafe, Commissary, Parking, Pickleball), where saving an event booking derives the catering job sheet, the commissary production list, the manpower roster and the payment schedule.
+A sales demo built by Growth Architect Studio for the owners of CVJ Events Place: one owner dashboard across six business units (Events Place, Catering, Cafe, Commissary, Parking, Pickleball), where saving an event booking derives the catering job sheet, the commissary production list, the manpower roster and the payment schedule, plus an analytics page (revenue by day and by business, revenue mix, top packages, court utilisation, inquiry pipeline, labor share) built from hand-rolled SVG charts that follow a validated colorblind-safe palette.
 
 **Every page carries the banner:** "Sample data prepared by Growth Architect Studio for CVJ. Names and figures are invented." Nothing here is CVJ's real data.
 

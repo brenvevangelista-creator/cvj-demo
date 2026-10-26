@@ -79,6 +79,14 @@ try {
   await page.goto(`${BASE}/schedule?view=week&from=${date}`, { waitUntil: 'networkidle' });
   assert((await page.locator('text=Smoke Test Co').count()) > 0, 'booking appears on the schedule');
 
+  await page.goto(`${BASE}/analytics?range=30`, { waitUntil: 'networkidle' });
+  assert((await page.locator('svg[role="img"]').count()) >= 10, 'analytics page renders its charts');
+  await page.locator('svg[aria-label="Stacked daily columns"] rect[fill="transparent"]').nth(5).hover();
+  await page.waitForTimeout(200);
+  assert((await page.locator('[role="status"]').count()) > 0, 'hovering a column shows a tooltip');
+  await page.getByRole('button', { name: 'Table' }).first().click();
+  assert((await page.locator('figure table tbody tr').count()) === 30, 'table view lists one row per day');
+
   await page.goto(detailUrl, { waitUntil: 'networkidle' });
   await page.locator('[data-reset-demo]').click();
   await page.waitForURL(`${BASE}/`, { timeout: 60_000 });

@@ -11,8 +11,8 @@ function seeded() {
   seedDatabase(db, TODAY);
   return db;
 }
-const count = (db: any, table: string, where = '1=1') =>
-  (db.prepare(`select count(*) as n from ${table} where ${where}`).get() as any).n as number;
+const count = (db: any, table: string, where = '1=1', ...params: unknown[]) =>
+  (db.prepare(`select count(*) as n from ${table} where ${where}`).get(...params) as any).n as number;
 
 describe('seed', () => {
   it('populates customers and bookings in range', () => {
@@ -59,6 +59,19 @@ describe('seed', () => {
 
     const low = db.prepare(`select i.name from ingredients i join (select ingredient_id, sum(qty) as on_hand from stock_movements group by ingredient_id) s on s.ingredient_id = i.id where s.on_hand < i.par_level`).all();
     expect(low.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('rosters daily staff for the cafe, courts and parking on top of event shifts', () => {
+    const db = seeded();
+    const daily = db.prepare(`select u.slug, count(*) as n from shifts s join units u on u.id = s.unit_id where s.booking_id is null and s.staff_id is not null and s.date = ? group by u.slug`).all(TODAY) as any[];
+    const bySlug = Object.fromEntries(daily.map((r) => [r.slug, r.n]));
+    expect(bySlug.cafe).toBeGreaterThanOrEqual(2);
+    expect(bySlug.pickleball).toBeGreaterThanOrEqual(1);
+    expect(bySlug.parking).toBeGreaterThanOrEqual(1);
+    // Daily rosters cover the same window as the daily logs: 90 days back, 14 ahead.
+    expect(count(db, 'shifts', 'booking_id is null and date = ?', addDays(TODAY, -90))).toBeGreaterThan(0);
+    expect(count(db, 'shifts', 'booking_id is null and date = ?', addDays(TODAY, 14))).toBeGreaterThan(0);
+    expect(count(db, 'shifts', 'booking_id is null and date = ?', addDays(TODAY, 15))).toBe(0);
   });
 
   it('is deterministic for the same today', () => {

@@ -154,6 +154,25 @@ export function seedDatabase(db: Db, today: string): void {
     }
     rebuildAllProduction(db);
 
+    // Daily rosters for the businesses that run every day: cafe, courts, parking.
+    // One shift per working day per person, with one day off a week, 90 days back and 14 ahead.
+    const dailyRoles: Record<string, { start: string; end: string }> = {
+      barista: { start: '07:00', end: '15:00' },
+      cashier: { start: '10:00', end: '18:00' },
+      'court attendant': { start: '06:00', end: '14:00' },
+      'parking marshals': { start: '08:00', end: '16:00' },
+    };
+    const dailyStaff = db.prepare('select id, unit_id, role from staff where role in (?, ?, ?, ?)').all(...Object.keys(dailyRoles)) as { id: number; unit_id: number; role: string }[];
+    const insDaily = db.prepare('insert into shifts (date, start_time, end_time, unit_id, role, staff_id, booking_id) values (?, ?, ?, ?, ?, ?, null)');
+    for (let off = -90; off <= 14; off++) {
+      const date = addDays(today, off);
+      dailyStaff.forEach((s, i) => {
+        if (weekday(date) === (i % 7)) return; // day off, staggered across the week
+        const w = dailyRoles[s.role];
+        insDaily.run(date, w.start, w.end, s.unit_id, s.role, s.id);
+      });
+    }
+
     // Inquiries pipeline
     const insInq = db.prepare('insert into inquiries (customer_id, unit_id, stage, pax, target_date, value_estimate) values (?, ?, ?, ?, ?, ?)');
     const stages = ['inquiry', 'inquiry', 'site_visit', 'site_visit', 'proposal_sent', 'proposal_sent', 'booked', 'lost'];

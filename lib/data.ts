@@ -255,7 +255,8 @@ export function getScheduleItems(from: string, to: string, db: Db = getDb()): Sc
   }
   const runs = db.prepare('select pr.date, count(pl.id) as lines from production_runs pr join production_lines pl on pl.run_id = pr.id where pr.date between ? and ? group by pr.date').all(from, to) as any[];
   for (const r of runs) items.push({ kind: 'production', date: r.date, startTime: '05:00', endTime: '12:00', title: `Production · ${r.lines} ingredient lines`, unitSlug: 'commissary', href: '/schedule' });
-  const shifts = db.prepare('select s.date, s.start_time, s.end_time, s.role, count(*) as heads, sum(case when s.staff_id is null then 1 else 0 end) as open from shifts s where s.date between ? and ? group by s.date, s.start_time, s.end_time, s.role').all(from, to) as any[];
+  // Event shifts only: the daily cafe, court and parking rosters would drown the compound view.
+  const shifts = db.prepare('select s.date, s.start_time, s.end_time, s.role, count(*) as heads, sum(case when s.staff_id is null then 1 else 0 end) as open from shifts s where s.date between ? and ? and s.booking_id is not null group by s.date, s.start_time, s.end_time, s.role').all(from, to) as any[];
   for (const s of shifts) items.push({ kind: 'shift', date: s.date, startTime: s.start_time, endTime: s.end_time, title: `${s.heads} ${s.role}${s.open ? ` (${s.open} open)` : ''}`, unitSlug: 'catering' });
   return items.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
 }

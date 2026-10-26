@@ -160,6 +160,18 @@ export function niceMax(x: number): number {
   return step * mag;
 }
 
+/**
+ * Axis ticks from 0 to the clean ceiling, with a tick count chosen so every step
+ * is itself a clean number: 1.5/3/6 ceilings get 3 steps, 2.5/5/10 get 5, the rest 4.
+ */
+export function axisTicks(max: number): { max: number; values: number[] } {
+  const top = niceMax(max);
+  const mag = Math.pow(10, Math.floor(Math.log10(top)));
+  const norm = Math.round((top / mag) * 100) / 100;
+  const count = [1.5, 3, 6].includes(norm) ? 3 : [2.5, 5, 10].includes(norm) ? 5 : 4;
+  return { max: top, values: Array.from({ length: count + 1 }, (_, i) => Number(((top * i) / count).toPrecision(12))) };
+}
+
 const trim = (n: number, digits: number) => n.toFixed(digits).replace(/\.?0+$/, '');
 
 /** Centavos -> '₱1.66M', '₱12.5K', '₱950'. For axis ticks and compact tiles. */
