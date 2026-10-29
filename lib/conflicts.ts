@@ -1,6 +1,6 @@
 // Pure conflict rules for the compound schedule: the same venue area booked twice
 // at once, and overlapping events bringing more vehicles than the parking lot holds.
-import { overlaps } from '@/lib/dates';
+import { fmtDate, overlaps } from '@/lib/dates';
 
 export interface ConflictBooking {
   id: number;
@@ -41,7 +41,7 @@ export function findConflicts(bookings: ConflictBooking[], parkingCapacity: numb
         kind: 'venue',
         date: a.date,
         bookingIds: [a.id, b.id],
-        message: `${a.venueArea} is double-booked on ${a.date}: ${a.startTime}–${a.endTime} and ${b.startTime}–${b.endTime}.`,
+        message: `${a.venueArea} is double-booked on ${fmtDate(a.date)}: ${a.startTime}–${a.endTime} and ${b.startTime}–${b.endTime}.`,
       });
     }
   }
@@ -65,7 +65,7 @@ export function findConflicts(bookings: ConflictBooking[], parkingCapacity: numb
         kind: 'parking',
         date: a.date,
         bookingIds: ids,
-        message: `About ${vehicles} vehicles expected on ${a.date} against ${parkingCapacity} parking slots.`,
+        message: `About ${vehicles} vehicles expected on ${fmtDate(a.date)} against ${parkingCapacity} parking slots.`,
       });
     }
   }

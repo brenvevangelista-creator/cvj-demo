@@ -133,6 +133,7 @@ export const STAFF: [string, UnitSlug, string, number][] = [
   ['Rhea Salazar', 'commissary', 'cooks', 11_000],
   ['Boyet Navarro', 'parking', 'parking marshals', 8_000],
   ['Jun Dela Cruz', 'parking', 'parking marshals', 8_000],
+  ['Noel Manalo', 'parking', 'parking marshals', 8_000],
   ['Ana Marie Lim', 'cafe', 'barista', 9_500],
   ['Carlo Fernandez', 'cafe', 'barista', 9_500],
   ['Grace Tan', 'cafe', 'cashier', 9_000],

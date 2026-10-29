@@ -74,6 +74,31 @@ describe('seed', () => {
     expect(count(db, 'shifts', 'booking_id is null and date = ?', addDays(TODAY, 15))).toBe(0);
   });
 
+  it('never puts one person on two overlapping shifts', () => {
+    const db = seeded();
+    const clashes = db
+      .prepare(
+        `select count(*) as n from shifts a join shifts b
+           on a.staff_id = b.staff_id and a.id < b.id and a.date = b.date
+          and a.start_time < b.end_time and b.start_time < a.end_time
+        where a.staff_id is not null`,
+      )
+      .get() as any;
+    expect(clashes.n).toBe(0);
+  });
+
+  it('gives catering its own paid off-site jobs, including one today', () => {
+    const db = seeded();
+    const paid = db
+      .prepare(
+        `select coalesce(sum(p.amount),0) as v from payments p join bookings b on b.id = p.booking_id
+           join units u on u.id = b.unit_id where u.slug = 'catering' and p.paid_on between ? and ?`,
+      )
+      .get(addDays(TODAY, -29), TODAY) as any;
+    expect(paid.v).toBeGreaterThan(0);
+    expect(count(db, 'bookings', "venue_area = 'Off-site' and date = ? and status = 'confirmed'", TODAY)).toBeGreaterThanOrEqual(1);
+  });
+
   it('is deterministic for the same today', () => {
     const q = `select id, customer_id, date, start_time, end_time, pax, package_id, venue_area, status from bookings order by id`;
     const a = seeded().prepare(q).all();

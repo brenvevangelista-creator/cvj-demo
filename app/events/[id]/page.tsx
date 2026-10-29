@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getBooking } from '@/lib/data';
 import { fmtDate, todayManila } from '@/lib/dates';
+import { roleCount } from '@/lib/labels';
 import { Badge, Empty, STATUS_TONE, php } from '@/lib/ui';
 
 export const dynamic = 'force-dynamic';
@@ -117,7 +118,7 @@ export default function BookingPage({ params }: { params: { id: string } }) {
                   return (
                     <tr key={role}>
                       <td className="py-1">
-                        <span className="font-medium">{r.total} {role}</span>
+                        <span className="font-medium">{roleCount(r.total, role)}</span>
                         <span className="block text-xs text-zinc-500">{r.assigned.join(', ') || 'nobody assigned yet'}</span>
                       </td>
                       <td className="py-1 text-right align-top">{open > 0 ? <Badge tone="warn">{open} open</Badge> : <Badge tone="ok">staffed</Badge>}</td>

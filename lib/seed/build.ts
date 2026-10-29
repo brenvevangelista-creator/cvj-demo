@@ -95,7 +95,9 @@ export function seedDatabase(db: Db, today: string): void {
     const insBooking = db.prepare('insert into bookings (customer_id, unit_id, date, start_time, end_time, pax, package_id, venue_area, status, notes) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     const insPayment = db.prepare('insert into payments (booking_id, amount, paid_on, method) values (?, ?, ?, ?)');
     const invoicesOf = db.prepare('select label, amount, due_date from invoices where booking_id = ? order by id');
-    const openShifts = db.prepare('select id, role from shifts where booking_id = ? and staff_id is null');
+    const openShifts = db.prepare('select id, role, date, start_time, end_time from shifts where booking_id = ? and staff_id is null');
+    // Is this person already on a shift that overlaps date/start/end? (args: staff, date, end, start)
+    const busyAt = db.prepare('select 1 from shifts where staff_id = ? and date = ? and start_time < ? and end_time > ? limit 1');
     const assign = db.prepare('update shifts set staff_id = ? where id = ?');
 
     type Planned = { offset: number; start: string; hours: number; pax: number; area: string; status: string; offsite?: boolean };
@@ -120,6 +122,17 @@ export function seedDatabase(db: Db, today: string): void {
     // overflow the 120-slot parking lot (50 + 74 vehicles), so both conflict kinds show.
     planned.push({ offset: 12, start: '10:00', hours: 4, pax: 150, area: 'Ground Floor', status: 'confirmed' });
     planned.push({ offset: 12, start: '13:00', hours: 5, pax: 220, area: 'Ground Floor', status: 'confirmed' });
+    // Planted off-site catering jobs so the catering business has its own recent
+    // revenue: three done in the last 30 days, one today and one next week.
+    for (const [offset, start, pax, status] of [
+      [-4, '10:00', 80, 'done'],
+      [-11, '17:00', 150, 'done'],
+      [-23, '11:00', 60, 'done'],
+      [0, '16:00', 100, 'confirmed'],
+      [6, '11:00', 200, 'confirmed'],
+    ] as const) {
+      planned.push({ offset, start, hours: 4, pax, area: 'Off-site', status, offsite: true });
+    }
 
     for (const p of planned) {
       const date = addDays(today, p.offset);
@@ -146,10 +159,12 @@ export function seedDatabase(db: Db, today: string): void {
       }
 
       // Roster: done events fully staffed; upcoming ones mostly staffed, a few open.
+      // A person is never put on two overlapping shifts; when everyone in the
+      // role is already working at that time, the shift stays open.
       for (const s of openShifts.all(bookingId) as any[]) {
-        const pool = staffByRole[s.role] ?? [];
         const fill = p.status === 'done' ? true : r.chance(0.7);
-        if (fill && pool.length) assign.run(r.pick(pool), s.id);
+        const free = (staffByRole[s.role] ?? []).filter((id) => !busyAt.get(id, s.date, s.end_time, s.start_time));
+        if (fill && free.length) assign.run(r.pick(free), s.id);
       }
     }
     rebuildAllProduction(db);
@@ -169,6 +184,7 @@ export function seedDatabase(db: Db, today: string): void {
       dailyStaff.forEach((s, i) => {
         if (weekday(date) === (i % 7)) return; // day off, staggered across the week
         const w = dailyRoles[s.role];
+        if (busyAt.get(s.id, date, w.end, w.start)) return; // already working an event at that time
         insDaily.run(date, w.start, w.end, s.unit_id, s.role, s.id);
       });
     }

@@ -3,6 +3,7 @@ import 'server-only';
 // and lib/conflicts.ts. The optional trailing `db` argument is for tests.
 import { getDb, type Db } from '@/lib/db';
 import { addDays, monthDays } from '@/lib/dates';
+import { roleCount } from '@/lib/labels';
 import { findConflicts, type Conflict, type ConflictBooking } from '@/lib/conflicts';
 import type { PackageDef } from '@/lib/types';
 import { loadPackage } from '@/lib/derived';
@@ -257,7 +258,7 @@ export function getScheduleItems(from: string, to: string, db: Db = getDb()): Sc
   for (const r of runs) items.push({ kind: 'production', date: r.date, startTime: '05:00', endTime: '12:00', title: `Production · ${r.lines} ingredient lines`, unitSlug: 'commissary', href: '/schedule' });
   // Event shifts only: the daily cafe, court and parking rosters would drown the compound view.
   const shifts = db.prepare('select s.date, s.start_time, s.end_time, s.role, count(*) as heads, sum(case when s.staff_id is null then 1 else 0 end) as open from shifts s where s.date between ? and ? and s.booking_id is not null group by s.date, s.start_time, s.end_time, s.role').all(from, to) as any[];
-  for (const s of shifts) items.push({ kind: 'shift', date: s.date, startTime: s.start_time, endTime: s.end_time, title: `${s.heads} ${s.role}${s.open ? ` (${s.open} open)` : ''}`, unitSlug: 'catering' });
+  for (const s of shifts) items.push({ kind: 'shift', date: s.date, startTime: s.start_time, endTime: s.end_time, title: `${roleCount(s.heads, s.role)}${s.open ? ` (${s.open} open)` : ''}`, unitSlug: 'catering' });
   return items.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
 }
 
