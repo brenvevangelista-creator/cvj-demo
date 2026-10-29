@@ -12,7 +12,7 @@ const UNITS: { slug: string; label: string; kinds: ScheduleItem['kind'][] }[] = 
   { slug: 'events', label: 'Events Place', kinds: ['event'] },
   { slug: 'catering', label: 'Catering', kinds: ['catering', 'shift'] },
   { slug: 'commissary', label: 'Commissary', kinds: ['production'] },
-  { slug: 'pickleball', label: 'Pickleball', kinds: ['court'] },
+  { slug: 'pickleball', label: 'Pickleball Park', kinds: ['court'] },
   { slug: 'parking', label: 'Parking', kinds: ['event'] },
   { slug: 'cafe', label: 'Cafe', kinds: [] },
 ];

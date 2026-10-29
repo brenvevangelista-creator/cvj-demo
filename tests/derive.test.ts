@@ -29,7 +29,7 @@ function booking(over: Partial<BookingCore> = {}): BookingCore {
     endTime: '15:00',
     pax: 100,
     packageId: 1,
-    venueArea: 'Grand Hall',
+    venueArea: 'Ground Floor',
     depositCentavos: 2_000_000,
     ...over,
   };

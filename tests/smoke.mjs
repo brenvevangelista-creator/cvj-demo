@@ -62,7 +62,7 @@ try {
   await page.fill('input[name="startTime"]', '11:00');
   await page.fill('input[name="endTime"]', '15:00');
   await page.fill('input[name="pax"]', '130');
-  await page.selectOption('select[name="venueArea"]', 'Grand Hall');
+  await page.selectOption('select[name="venueArea"]', 'Ground Floor');
   await page.fill('input[name="depositPesos"]', '20000');
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/events\/\d+$/, { timeout: 30_000 });

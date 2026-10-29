@@ -115,11 +115,11 @@ export function seedDatabase(db: Db, today: string): void {
       });
     }
     // Planted event today so the overview has live numbers.
-    planned.push({ offset: 0, start: '11:00', hours: 4, pax: 120, area: 'Garden', status: 'confirmed' });
-    // Planted double-booking in the Grand Hall, 12 days out. 150 + 220 guests also
+    planned.push({ offset: 0, start: '11:00', hours: 4, pax: 120, area: '2nd Floor', status: 'confirmed' });
+    // Planted double-booking on the Ground Floor, 12 days out. 150 + 220 guests also
     // overflow the 120-slot parking lot (50 + 74 vehicles), so both conflict kinds show.
-    planned.push({ offset: 12, start: '10:00', hours: 4, pax: 150, area: 'Grand Hall', status: 'confirmed' });
-    planned.push({ offset: 12, start: '13:00', hours: 5, pax: 220, area: 'Grand Hall', status: 'confirmed' });
+    planned.push({ offset: 12, start: '10:00', hours: 4, pax: 150, area: 'Ground Floor', status: 'confirmed' });
+    planned.push({ offset: 12, start: '13:00', hours: 5, pax: 220, area: 'Ground Floor', status: 'confirmed' });
 
     for (const p of planned) {
       const date = addDays(today, p.offset);
@@ -178,7 +178,7 @@ export function seedDatabase(db: Db, today: string): void {
     const stages = ['inquiry', 'inquiry', 'site_visit', 'site_visit', 'proposal_sent', 'proposal_sent', 'booked', 'lost'];
     for (let i = 0; i < 12; i++) {
       const pax = r.int(6, 40) * 5;
-      insInq.run(r.pick(customerIds), unitId.events, r.pick(stages), pax, addDays(today, r.int(20, 120)), pax * r.pick([85_000, 120_000, 180_000]));
+      insInq.run(r.pick(customerIds), unitId.events, r.pick(stages), pax, addDays(today, r.int(20, 120)), pax * r.pick([62_000, 88_000, 125_000]));
     }
 
     // Daily logs for the past 90 days (and courts 14 days ahead)
@@ -199,7 +199,7 @@ export function seedDatabase(db: Db, today: string): void {
       for (let court = 1; court <= 4; court++) {
         for (let hour = 6; hour <= 21; hour++) {
           const busy = hour >= 17 || hour <= 8 || wkend;
-          if (r.chance(busy ? 0.65 : 0.3)) insCourt.run(court, date, hour, r.pick(customerIds), 40_000);
+          if (r.chance(busy ? 0.65 : 0.3)) insCourt.run(court, date, hour, r.pick(customerIds), 45_000);
         }
       }
     }

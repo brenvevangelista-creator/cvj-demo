@@ -16,7 +16,7 @@ beforeAll(() => {
 describe('getOverview', () => {
   it('returns the six units in fixed order with at least one alert', () => {
     const o = getOverview(TODAY, db);
-    expect(o.units.map((u) => u.name)).toEqual(['Events Place', 'Catering', 'Cafe', 'Commissary', 'Parking', 'Pickleball']);
+    expect(o.units.map((u) => u.name)).toEqual(['Events Place', 'Catering', 'Cafe', 'Commissary', 'Parking', 'Pickleball Park']);
     expect(o.units.some((u) => u.alert !== null)).toBe(true);
     expect(o.approvals.length).toBeGreaterThanOrEqual(1);
     expect(o.approvals.every((a) => a.status === 'pending')).toBe(true);
@@ -32,7 +32,7 @@ describe('getOverview', () => {
 describe('listBookings', () => {
   it('returns both planted bookings for their month', () => {
     const rows = listBookings(DOUBLE_BOOKING_DATE.slice(0, 7), db);
-    const planted = rows.filter((r) => r.date === DOUBLE_BOOKING_DATE && r.venueArea === 'Grand Hall');
+    const planted = rows.filter((r) => r.date === DOUBLE_BOOKING_DATE && r.venueArea === 'Ground Floor');
     expect(planted.length).toBeGreaterThanOrEqual(2);
     for (const r of planted) expect(r.balanceDue).toBeGreaterThan(0);
   });
@@ -164,7 +164,7 @@ describe('listBookings month edges', () => {
     const customer = (fresh.prepare('select id from customers limit 1').get() as any).id;
     const unit = (fresh.prepare("select id from units where slug = 'events'").get() as any).id;
     const pkg = (fresh.prepare('select id from packages limit 1').get() as any).id;
-    const ins = fresh.prepare("insert into bookings (customer_id, unit_id, date, start_time, end_time, pax, package_id, venue_area, status) values (?, ?, ?, '10:00', '14:00', 50, ?, 'Garden', 'confirmed')");
+    const ins = fresh.prepare("insert into bookings (customer_id, unit_id, date, start_time, end_time, pax, package_id, venue_area, status) values (?, ?, ?, '10:00', '14:00', 50, ?, '2nd Floor', 'confirmed')");
     ins.run(customer, unit, '2031-03-01', pkg);
     ins.run(customer, unit, '2031-03-31', pkg);
     ins.run(customer, unit, '2031-04-01', pkg);

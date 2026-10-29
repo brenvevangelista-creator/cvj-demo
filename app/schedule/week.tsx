@@ -13,7 +13,7 @@ export const KIND_CLASS: Record<ScheduleItem['kind'], string> = {
 export const KIND_LABEL: Record<ScheduleItem['kind'], string> = {
   event: 'Event',
   catering: 'Off-site catering',
-  court: 'Pickleball',
+  court: 'Pickleball Park',
   production: 'Commissary production',
   shift: 'Staff shift',
 };

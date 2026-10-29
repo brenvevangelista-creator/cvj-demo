@@ -11,7 +11,7 @@ export const UNIT_NAMES: Record<string, string> = {
   cafe: 'Cafe',
   commissary: 'Commissary',
   parking: 'Parking',
-  pickleball: 'Pickleball',
+  pickleball: 'Pickleball Park',
 };
 
 export interface DailyRow {

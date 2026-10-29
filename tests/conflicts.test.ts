@@ -7,8 +7,8 @@ describe('findConflicts', () => {
   it('flags two bookings overlapping in the same venue area', () => {
     const out = findConflicts(
       [
-        { id: 1, ...base, startTime: '10:00', endTime: '14:00', venueArea: 'Grand Hall' },
-        { id: 2, ...base, startTime: '13:00', endTime: '18:00', venueArea: 'Grand Hall' },
+        { id: 1, ...base, startTime: '10:00', endTime: '14:00', venueArea: 'Ground Floor' },
+        { id: 2, ...base, startTime: '13:00', endTime: '18:00', venueArea: 'Ground Floor' },
       ],
       120,
     );
@@ -21,8 +21,8 @@ describe('findConflicts', () => {
   it('does not flag different venue areas', () => {
     const out = findConflicts(
       [
-        { id: 1, ...base, startTime: '10:00', endTime: '14:00', venueArea: 'Grand Hall' },
-        { id: 2, ...base, startTime: '13:00', endTime: '18:00', venueArea: 'Garden' },
+        { id: 1, ...base, startTime: '10:00', endTime: '14:00', venueArea: 'Ground Floor' },
+        { id: 2, ...base, startTime: '13:00', endTime: '18:00', venueArea: '2nd Floor' },
       ],
       120,
     );
@@ -32,8 +32,8 @@ describe('findConflicts', () => {
   it('flags parking capacity when overlapping bookings bring too many vehicles', () => {
     const out = findConflicts(
       [
-        { id: 1, ...base, pax: 200, startTime: '10:00', endTime: '14:00', venueArea: 'Grand Hall' },
-        { id: 2, ...base, pax: 180, startTime: '13:00', endTime: '18:00', venueArea: 'Garden' },
+        { id: 1, ...base, pax: 200, startTime: '10:00', endTime: '14:00', venueArea: 'Ground Floor' },
+        { id: 2, ...base, pax: 180, startTime: '13:00', endTime: '18:00', venueArea: '2nd Floor' },
       ],
       120,
     );
@@ -46,8 +46,8 @@ describe('findConflicts', () => {
   it('ignores cancelled bookings', () => {
     const out = findConflicts(
       [
-        { id: 1, ...base, startTime: '10:00', endTime: '14:00', venueArea: 'Grand Hall' },
-        { id: 2, ...base, status: 'cancelled', startTime: '13:00', endTime: '18:00', venueArea: 'Grand Hall' },
+        { id: 1, ...base, startTime: '10:00', endTime: '14:00', venueArea: 'Ground Floor' },
+        { id: 2, ...base, status: 'cancelled', startTime: '13:00', endTime: '18:00', venueArea: 'Ground Floor' },
       ],
       120,
     );
@@ -61,8 +61,8 @@ describe('findConflicts', () => {
   it('does not flag bookings that only touch at the boundary', () => {
     const out = findConflicts(
       [
-        { id: 1, ...base, pax: 300, startTime: '10:00', endTime: '14:00', venueArea: 'Grand Hall' },
-        { id: 2, ...base, pax: 300, startTime: '14:00', endTime: '18:00', venueArea: 'Grand Hall' },
+        { id: 1, ...base, pax: 300, startTime: '10:00', endTime: '14:00', venueArea: 'Ground Floor' },
+        { id: 2, ...base, pax: 300, startTime: '14:00', endTime: '18:00', venueArea: 'Ground Floor' },
       ],
       120,
     );
@@ -73,8 +73,8 @@ describe('findConflicts', () => {
     // ceil(180/3) + ceil(180/3) = 60 + 60 = 120, which fits.
     const out = findConflicts(
       [
-        { id: 1, ...base, pax: 180, startTime: '10:00', endTime: '14:00', venueArea: 'Grand Hall' },
-        { id: 2, ...base, pax: 180, startTime: '13:00', endTime: '18:00', venueArea: 'Garden' },
+        { id: 1, ...base, pax: 180, startTime: '10:00', endTime: '14:00', venueArea: 'Ground Floor' },
+        { id: 2, ...base, pax: 180, startTime: '13:00', endTime: '18:00', venueArea: '2nd Floor' },
       ],
       120,
     );

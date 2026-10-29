@@ -20,7 +20,7 @@ function input(over: Partial<BookingInput> = {}): BookingInput {
     endTime: '15:00',
     pax: 100,
     packageId: 1,
-    venueArea: 'Garden',
+    venueArea: '2nd Floor',
     depositCentavos: 2_000_000,
     notes: null,
     ...over,
@@ -130,13 +130,13 @@ describe('updateBooking and rederive', () => {
   });
 
   it('recomputes a shared production day when one booking changes', () => {
-    const a = (createBooking(db, input({ pax: 100, packageId: 1, venueArea: 'Garden' }), TODAY) as any).id as number;
-    const b = (createBooking(db, input({ pax: 60, packageId: 1, venueArea: 'Poolside', startTime: '17:00', endTime: '21:00' }), TODAY) as any).id as number;
+    const a = (createBooking(db, input({ pax: 100, packageId: 1, venueArea: '2nd Floor' }), TODAY) as any).id as number;
+    const b = (createBooking(db, input({ pax: 60, packageId: 1, venueArea: '3rd Floor', startTime: '17:00', endTime: '21:00' }), TODAY) as any).id as number;
     const prodDate = addDays('2026-12-05', -1);
     const ingredient = (db.prepare('select ingredient_id from recipe_lines rl join package_items pi on pi.menu_item_id = rl.menu_item_id join ingredients i on i.id = rl.ingredient_id where pi.package_id = 1 and i.fresh = 0 limit 1').get() as any).ingredient_id;
     const qty = () => (db.prepare('select pl.qty from production_lines pl join production_runs pr on pr.id = pl.run_id where pr.date = ? and pl.ingredient_id = ?').get(prodDate, ingredient) as any).qty as number;
     const before = qty();
-    updateBooking(db, b, input({ pax: 120, packageId: 1, venueArea: 'Poolside', startTime: '17:00', endTime: '21:00' }), TODAY);
+    updateBooking(db, b, input({ pax: 120, packageId: 1, venueArea: '3rd Floor', startTime: '17:00', endTime: '21:00' }), TODAY);
     const after = qty();
     expect(after).toBeGreaterThan(before);
     // Still exactly one aggregated line for that ingredient on that day.

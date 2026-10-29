@@ -6,12 +6,12 @@ export const UNITS = [
   { slug: 'cafe', name: 'Cafe', kind: 'cafe', capacity: 40 },
   { slug: 'commissary', name: 'Commissary', kind: 'commissary', capacity: null },
   { slug: 'parking', name: 'Parking', kind: 'parking', capacity: 120 },
-  { slug: 'pickleball', name: 'Pickleball', kind: 'courts', capacity: 4 },
+  { slug: 'pickleball', name: 'Pickleball Park', kind: 'courts', capacity: 4 } // listed publicly as CVJ Pickleball Park; four courts is an assumption,
 ] as const;
 
 export type UnitSlug = (typeof UNITS)[number]['slug'];
 
-export const VENUE_AREAS = ['Grand Hall', 'Garden', 'Poolside'] as const;
+export const VENUE_AREAS = ['Ground Floor', '2nd Floor', '3rd Floor'] as const; // one event space per floor, per public listings; confirm names with the owners
 
 export const MANPOWER_RATIOS = [
   { role: 'servers', paxPerHead: 25, fixedCount: null, unit: 'catering' },
@@ -105,12 +105,12 @@ export const MENU_ITEMS: { name: string; unit: UnitSlug; price: number; recipe: 
 
 // Packages: name, price per pax (centavos), service style, menu items with portions per pax
 export const PACKAGES: { name: string; pricePerPax: number; serviceStyle: string; items: [string, number][] }[] = [
-  { name: 'Classic Buffet', pricePerPax: 85_000, serviceStyle: 'buffet', items: [['Chicken Inasal', 1], ['Pork Adobo', 1], ['Pancit Canton', 1], ['Steamed Rice', 1.2], ['Garden Salad', 0.5], ['Leche Flan', 1], ['Iced Tea Pitcher', 0.15]] },
-  { name: 'Fiesta Buffet', pricePerPax: 120_000, serviceStyle: 'buffet', items: [['Lechon Kawali', 1], ['Chicken Curry', 1], ['Bangus Belly', 1], ['Pancit Canton', 1], ['Steamed Rice', 1.2], ['Buttered Vegetables', 0.8], ['Mango Float', 1], ['Iced Tea Pitcher', 0.15]] },
-  { name: 'Garden Cocktail', pricePerPax: 95_000, serviceStyle: 'cocktail', items: [['Chicken Lollipop', 1.5], ['Cheese Sticks', 1.5], ['Lumpiang Shanghai', 2], ['Pork Sisig', 0.6], ['Fruit Platter', 0.5], ['Banana Turon', 1], ['Iced Tea Pitcher', 0.15]] },
-  { name: 'Plated Signature', pricePerPax: 180_000, serviceStyle: 'plated', items: [['Garden Salad', 1], ['Dinner Rolls', 1], ['Beef Steak Tagalog', 1], ['Garlic Shrimp', 1], ['Steamed Rice', 1], ['Mango Cheesecake', 1], ['Iced Tea Pitcher', 0.15]] },
-  { name: 'Premium Plated', pricePerPax: 250_000, serviceStyle: 'plated', items: [['Garden Salad', 1], ['Dinner Rolls', 1], ['Shrimp Sinigang', 0.5], ['Beef Caldereta', 1], ['Fish Fillet in Lemon Butter', 1], ['Mac and Cheese', 0.5], ['Leche Flan', 1], ['Mango Float', 1]] },
-  { name: 'Merienda Set', pricePerPax: 45_000, serviceStyle: 'buffet', items: [['Pancit Canton', 1], ['Lumpiang Shanghai', 2], ['Banana Turon', 1], ['Cheese Sticks', 1], ['Iced Tea Pitcher', 0.15], ['Dinner Rolls', 1]] },
+  { name: 'Classic Buffet', pricePerPax: 62_000, serviceStyle: 'buffet', items: [['Chicken Inasal', 1], ['Pork Adobo', 1], ['Pancit Canton', 1], ['Steamed Rice', 1.2], ['Garden Salad', 0.5], ['Leche Flan', 1], ['Iced Tea Pitcher', 0.15]] },
+  { name: 'Fiesta Buffet', pricePerPax: 88_000, serviceStyle: 'buffet', items: [['Lechon Kawali', 1], ['Chicken Curry', 1], ['Bangus Belly', 1], ['Pancit Canton', 1], ['Steamed Rice', 1.2], ['Buttered Vegetables', 0.8], ['Mango Float', 1], ['Iced Tea Pitcher', 0.15]] },
+  { name: 'Garden Cocktail', pricePerPax: 75_000, serviceStyle: 'cocktail', items: [['Chicken Lollipop', 1.5], ['Cheese Sticks', 1.5], ['Lumpiang Shanghai', 2], ['Pork Sisig', 0.6], ['Fruit Platter', 0.5], ['Banana Turon', 1], ['Iced Tea Pitcher', 0.15]] },
+  { name: 'Plated Signature', pricePerPax: 125_000, serviceStyle: 'plated', items: [['Garden Salad', 1], ['Dinner Rolls', 1], ['Beef Steak Tagalog', 1], ['Garlic Shrimp', 1], ['Steamed Rice', 1], ['Mango Cheesecake', 1], ['Iced Tea Pitcher', 0.15]] },
+  { name: 'Premium Plated', pricePerPax: 165_000, serviceStyle: 'plated', items: [['Garden Salad', 1], ['Dinner Rolls', 1], ['Shrimp Sinigang', 0.5], ['Beef Caldereta', 1], ['Fish Fillet in Lemon Butter', 1], ['Mac and Cheese', 0.5], ['Leche Flan', 1], ['Mango Float', 1]] },
+  { name: 'Merienda Set', pricePerPax: 35_000, serviceStyle: 'buffet', items: [['Pancit Canton', 1], ['Lumpiang Shanghai', 2], ['Banana Turon', 1], ['Cheese Sticks', 1], ['Iced Tea Pitcher', 0.15], ['Dinner Rolls', 1]] },
 ];
 
 // Staff: name, unit, role, hourly rate (centavos)
